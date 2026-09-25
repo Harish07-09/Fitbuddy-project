@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FitBuddy — AI Fitness Plan Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14161a; --card:#1e2126; --card2:#262a31; --line:#33383f;
+  --ink:#f2f0e9; --ink-dim:#a8adb6; --accent:#ff7a29; --accent-ink:#14161a;
+  --good:#7ddc6f;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2f0e9; --card:#ffffff; --card2:#eceae2; --line:#d9d5c9;
+    --ink:#181a1c; --ink-dim:#5c6067; --accent:#d9580f; --accent-ink:#ffffff;
+  }
+}
+:root[data-theme="dark"]{ --bg:#14161a; --card:#1e2126; --card2:#262a31; --line:#33383f; --ink:#f2f0e9; --ink-dim:#a8adb6; --accent:#ff7a29; --accent-ink:#14161a; }
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+  font-family:"Work Sans",sans-serif; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.brand{font-family:"Oswald",sans-serif; text-transform:uppercase; letter-spacing:.02em; margin:0;}
+.app{max-width:640px; margin:0 auto; padding:0 18px 60px;}
+header.top{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+  background:var(--bg); padding:18px 18px 10px; border-bottom:1px solid var(--line);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.brand{font-size:22px; font-weight:700; color:var(--accent);}
+.brand span{color:var(--ink);}
+nav.tabs{display:flex; gap:6px; padding:10px 18px 0; max-width:640px; margin:0 auto; overflow-x:auto;}
+nav.tabs button{
+  background:none; border:1px solid var(--line); color:var(--ink-dim); font-family:"Work Sans"; font-weight:600;
+  font-size:13px; padding:8px 14px; border-radius:999px; cursor:pointer; white-space:nowrap;
+}
+nav.tabs button.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+.view{display:none; padding-top:22px;}
+.view.active{display:block;}
+p.lede{color:var(--ink-dim); font-size:15px; line-height:1.5; margin:6px 0 24px; max-width:46ch;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px;}
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12px; font-weight:600; color:var(--ink-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em;}
+.field input, .field select, .field textarea{
+  width:100%; background:var(--card2); border:1px solid var(--line); color:var(--ink);
+  padding:11px 12px; border-radius:7px; font-size:15px; font-family:inherit;
+}
+.field textarea{resize:vertical; min-height:70px;}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+button.cta{
+  background:var(--accent); color:var(--accent-ink); border:none; font-family:"Oswald";
+  text-transform:uppercase; letter-spacing:.03em; font-size:15px; font-weight:700;
+  padding:13px 18px; border-radius:8px; cursor:pointer; width:100%; margin-top:6px;
+}
+button.cta:active{opacity:.85;}
+button.ghost{background:none; border:1px solid var(--line); color:var(--ink); font-family:"Work Sans"; font-weight:600; padding:9px 14px; border-radius:7px; cursor:pointer; font-size:13px;}
+.summary{display:grid; grid-template-columns:repeat(2,1fr); gap:10px 16px; margin-bottom:22px;}
+.summary div{border-left:2px solid var(--accent); padding-left:10px;}
+.summary .k{font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.03em;}
+.summary .v{font-size:15px; font-weight:600;}
+.day{border:1px solid var(--line); border-radius:9px; padding:14px 16px; margin-bottom:10px; background:var(--card);}
+.day .num{font-family:"Oswald"; color:var(--accent); font-size:12px; letter-spacing:.05em; text-transform:uppercase;}
+.day h3{font-size:17px; margin:2px 0 8px;}
+.day ul{margin:0; padding-left:18px; font-size:14px; line-height:1.6; color:var(--ink-dim);}
+.tip{background:var(--card2); border-left:3px solid var(--good); border-radius:8px; padding:14px 16px; font-size:14.5px; line-height:1.55; margin:18px 0 26px;}
+.tip strong{color:var(--good); font-family:"Oswald"; text-transform:uppercase; font-size:12px; letter-spacing:.03em; display:block; margin-bottom:6px;}
+.confirm{background:rgba(125,220,111,.12); border:1px solid var(--good); color:var(--good); padding:10px 14px; border-radius:8px; font-size:13.5px; margin-bottom:16px; display:none;}
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th,td{text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top;}
+th{color:var(--ink-dim); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em;}
+td.plan-cell{max-width:170px; font-size:12.5px; color:var(--ink-dim); white-space:pre-line;}
+.empty{color:var(--ink-dim); font-size:14px; padding:30px 0; text-align:center;}
+.scrollx{overflow-x:auto;}
+footer.note{color:var(--ink-dim); font-size:12px; text-align:center; margin-top:30px;}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">Fit<span>Buddy</span></div>
+</header>
+<nav class="tabs">
+  <button data-tab="home" class="active">Plan form</button>
+  <button data-tab="result">My plan</button>
+  <button data-tab="admin">All users</button>
+</nav>
+
+<div class="app">
+
+  <!-- HOME -->
+  <section class="view active" id="home">
+    <p class="lede">Tell FitBuddy your stats and goal. It builds a 7-day workout plan and a nutrition tip around them — then adapts as you give feedback.</p>
+    <div class="card">
+      <form id="planForm">
+        <div class="field"><label for="name">Name</label><input id="name" required></div>
+        <div class="row2">
+          <div class="field"><label for="uid">User ID</label><input id="uid" required></div>
+          <div class="field"><label for="age">Age</label><input id="age" type="number" min="10" max="100" required></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="weight">Weight (kg)</label><input id="weight" type="number" min="20" max="300" required></div>
+          <div class="field"><label for="intensity">Intensity</label>
+            <select id="intensity"><option>Low</option><option selected>Medium</option><option>High</option></select>
+          </div>
+        </div>
+        <div class="field"><label for="goal">Fitness goal</label>
+          <select id="goal">
+            <option>Weight loss</option><option>Muscle gain</option><option>General wellness</option><option>Flexibility</option>
+          </select>
+        </div>
+        <button class="cta" type="submit">Generate plan</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="view" id="result">
+    <div id="resultEmpty" class="empty">No plan yet — fill in the form to generate one.</div>
+    <div id="resultBody" style="display:none;">
+      <div class="summary" id="summaryBox"></div>
+      <div id="planBox"></div>
+      <div class="tip" id="tipBox"></div>
+      <h2 style="font-size:16px;margin-bottom:10px;">Refine with feedback</h2>
+      <div class="confirm" id="confirmBox">Plan updated based on your feedback.</div>
+      <div class="card">
+        <form id="feedbackForm">
+          <div class="field"><label for="fb">What would you change?</label>
+            <textarea id="fb" placeholder="e.g. more cardio, include more rest days, add yoga"></textarea>
+          </div>
+          <button class="cta" type="submit">Update plan</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section class="view" id="admin">
+    <p class="lede">Every user who has generated a plan on this device, with their original and feedback-updated plans.</p>
+    <div id="adminEmpty" class="empty">No users yet.</div>
+    <div class="scrollx">
+      <table id="adminTable" style="display:none;">
+        <thead><tr><th>User</th><th>Goal</th><th>Original plan</th><th>Updated plan</th><th></th></tr></thead>
+        <tbody id="adminBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="note">Demo build of the FitBuddy concept — plans are generated locally in your browser, no data leaves this device.</footer>
+</div>
+
+<script>
+const EX = {
+  "Weight loss": {
+    Low:["Brisk walk 20 min","Bodyweight squats 3x12","Standing march 3x30s","Wall push-ups 3x10"],
+    Medium:["Jump rope 3x2 min","Bodyweight squats 4x15","Mountain climbers 3x30s","Incline push-ups 3x12"],
+    High:["Sprint intervals 8x30s","Burpees 4x15","Jump squats 4x15","Push-ups 4x15"]
+  },
+  "Muscle gain": {
+    Low:["Goblet squats 3x10","Dumbbell rows 3x10","Push-ups 3x8","Plank 3x20s"],
+    Medium:["Barbell squats 4x8","Bench press 4x8","Bent-over rows 4x10","Dumbbell shoulder press 3x10"],
+    High:["Barbell squats 5x5","Deadlifts 5x5","Bench press 5x5","Pull-ups 4x8"]
+  },
+  "General wellness": {
+    Low:["Easy walk 20 min","Stretch routine 10 min","Bodyweight circuit 2x10","Breathing drill 5 min"],
+    Medium:["Jog 20 min","Bodyweight circuit 3x12","Balance drills 3x10","Core circuit 3x30s"],
+    High:["Run 30 min","Full-body circuit 4x12","Agility ladder 4 sets","Core circuit 4x40s"]
+  },
+  "Flexibility": {
+    Low:["Gentle yoga flow 15 min","Hamstring stretch 3x30s","Hip opener 3x30s","Breathing 5 min"],
+    Medium:["Vinyasa flow 25 min","Deep lunge stretch 3x30s","Shoulder mobility 3x10","Spinal twist 3x30s"],
+    High:["Power yoga 35 min","Full split progression 4x30s","Dynamic mobility flow 15 min","Deep stretch cooldown 10 min"]
+  }
+};
+const FOCUS = ["Full body","Upper body","Lower body","Cardio & conditioning","Core & stability","Active recovery / mobility","Flexibility & stretch"];
+const TIPS = {
+  "Weight loss":"Keep a modest calorie deficit and prioritize protein at each meal — chicken, fish, beans, or Greek yogurt — to protect muscle while you lose fat. Drink water before meals to help manage appetite.",
+  "Muscle gain":"Eat in a slight calorie surplus with protein at every meal to support recovery and growth. Aim for roughly 1.6–2g of protein per kg of bodyweight daily, and don't skip carbs around workouts.",
+  "General wellness":"Balance your plate with whole grains, vegetables, and lean protein, and stay consistently hydrated. Small, sustainable habits beat strict short-term rules for long-term wellness.",
+  "Flexibility":"Hydrate well and warm up muscles with light movement before deep stretching. Magnesium-rich foods like leafy greens and nuts can help with muscle relaxation and recovery."
+};
+function planFor(goal, intensity, feedback){
+  const pool = EX[goal][intensity];
+  let focusList = FOCUS.slice();
+  if(feedback){
+    const f = feedback.toLowerCase();
+    if(f.includes("cardio")) focusList[1] = "Cardio & conditioning";
+    if(f.includes("rest")) focusList[5] = "Rest day — light walk or stretch only";
+    if(f.includes("yoga")) focusList[6] = "Yoga flow";
+    if(f.includes("core")) focusList[4] = "Core & stability (extra focus)";
+  }
+  return focusList.map((focus,i)=>({
+    day:i+1, focus,
+    exercises: focus.startsWith("Rest") ? ["Easy walk 15–20 min","Light stretching 10 min"] : pool
+  }));
+}
+function planHTML(plan){
+  return plan.map(d=>`<div class="day"><div class="num">Day ${d.day}</div><h3>${d.focus}</h3><ul>${d.exercises.map(e=>`<li>${e}</li>`).join("")}</ul></div>`).join("");
+}
+function planText(plan){
+  return plan.map(d=>`Day ${d.day} — ${d.focus}: ${d.exercises.join(", ")}`).join("\n");
+}
+
+const USERS_KEY = "fitbuddy_users_v1";
+function loadUsers(){ try{ return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }catch(e){ return []; } }
+function saveUsers(u){ try{ localStorage.setItem(USERS_KEY, JSON.stringify(u)); }catch(e){} }
+
+let currentUid = null;
+
+function renderTabs(){
+  document.querySelectorAll("nav.tabs button").forEach(b=>{
+    b.onclick = ()=>{
+      document.querySelectorAll("nav.tabs button").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      document.getElementById(b.dataset.tab).classList.add("active");
+      if(b.dataset.tab==="admin") renderAdmin();
+    };
+  });
+}
+
+function showResult(user){
+  document.getElementById("resultEmpty").style.display="none";
+  document.getElementById("resultBody").style.display="block";
+  document.getElementById("summaryBox").innerHTML = `
+    <div><div class="k">Name</div><div class="v">${user.name}</div></div>
+    <div><div class="k">User ID</div><div class="v">${user.uid}</div></div>
+    <div><div class="k">Age</div><div class="v">${user.age}</div></div>
+    <div><div class="k">Weight</div><div class="v">${user.weight} kg</div></div>
+    <div><div class="k">Goal</div><div class="v">${user.goal}</div></div>
+    <div><div class="k">Intensity</div><div class="v">${user.intensity}</div></div>`;
+  const activePlan = user.updatedPlan || user.originalPlan;
+  document.getElementById("planBox").innerHTML = planHTML(activePlan);
+  document.getElementById("tipBox").innerHTML = `<strong>Nutrition &amp; recovery tip</strong>${TIPS[user.goal]}`;
+  document.getElementById("confirmBox").style.display = user.updatedPlan ? "block" : "none";
+}
+
+document.getElementById("planForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const name = document.getElementById("name").value.trim();
+  const uid = document.getElementById("uid").value.trim();
+  const age = document.getElementById("age").value;
+  const weight = document.getElementById("weight").value;
+  const goal = document.getElementById("goal").value;
+  const intensity = document.getElementById("intensity").value;
+  if(!name||!uid||!age||!weight) return;
+  const plan = planFor(goal, intensity, "");
+  const user = {name, uid, age, weight, goal, intensity, originalPlan: plan, updatedPlan:null};
+  let users = loadUsers().filter(u=>u.uid!==uid);
+  users.push(user);
+  saveUsers(users);
+  currentUid = uid;
+  showResult(user);
+  document.querySelector('nav.tabs button[data-tab="result"]').click();
+});
+
+document.getElementById("feedbackForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  if(!currentUid) return;
+  const fb = document.getElementById("fb").value.trim();
+  let users = loadUsers();
+  const user = users.find(u=>u.uid===currentUid);
+  if(!user) return;
+  user.feedback = fb;
+  user.updatedPlan = planFor(user.goal, user.intensity, fb);
+  saveUsers(users);
+  showResult(user);
+  document.getElementById("fb").value="";
+});
+
+function renderAdmin(){
+  const users = loadUsers();
+  const table = document.getElementById("adminTable");
+  const empty = document.getElementById("adminEmpty");
+  const body = document.getElementById("adminBody");
+  if(!users.length){ table.style.display="none"; empty.style.display="block"; return; }
+  empty.style.display="none"; table.style.display="table";
+  body.innerHTML = users.map(u=>`
+    <tr>
+      <td><strong>${u.name}</strong><br><span style="color:var(--ink-dim)">${u.uid} · age ${u.age} · ${u.weight}kg</span></td>
+      <td>${u.goal}<br><span style="color:var(--ink-dim)">${u.intensity}</span></td>
+      <td class="plan-cell">${planText(u.originalPlan)}</td>
+      <td class="plan-cell">${u.updatedPlan ? planText(u.updatedPlan) : "—"}</td>
+      <td><button class="ghost" data-uid="${u.uid}">Delete</button></td>
+    </tr>`).join("");
+  body.querySelectorAll("button[data-uid]").forEach(b=>{
+    b.onclick = ()=>{
+      let us = loadUsers().filter(u=>u.uid!==b.dataset.uid);
+      saveUsers(us);
+      renderAdmin();
+    };
+  });
+}
+
+renderTabs();
+renderAdmin();
+</script>
+</body>
+</html>
